@@ -1,28 +1,36 @@
 import hashlib
 import json
-import re
+import cryptography.hazmat.primitives.asymmetric.ed25519 as ed25519
 
 """
-******************************************************************
-RIPPED STRAIGHT FROM ONE OF THE TUTS, MAY BE A GOOD STARTING POINT
-AND MAY JUST HAVE EVERYTHING WE NEED
-******************************************************************
+more updated stuff from labs
 """
+def transaction_bytes(transaction: dict):
+    return json.dumps({k: transaction.get(k) for k in ['sender', 'message']}, sort_keys=True).encode()
 
-sender_valid = re.compile('^[a-fA-F0-9]{64}$')
+
+def make_transaction(message: str, private_key: ed25519.Ed25519PrivateKey):
+    transaction = {'sender': private_key.public_key().public_bytes_raw().hex(), 'message': message}
+    signature = private_key.sign(transaction_bytes(transaction)).hex()
+    transaction['signature'] = signature
+    return transaction
 
 
 def validate_transaction(transaction: dict):
-    sender_validation = False
-    content_validation = False
-
-    if transaction.get('sender') and isinstance(transaction['sender'], str):
-        sender_validation = sender_valid.search(transaction['sender'])
-
-    if transaction.get('message') and isinstance(transaction['message'], str):
-        content_validation = len(transaction['message']) <= 70 and transaction['message'].isalnum()
-
-    return sender_validation and content_validation
+    keys = ['sender', 'message', 'signature']
+    try:
+        if len(transaction) != 3:
+            return False
+        for key in keys:
+            if not isinstance(transaction[key], str):
+                return False
+        public_key = ed25519.Ed25519PublicKey.from_public_bytes(bytes.fromhex(transaction['sender']))
+        if len(transaction['message']) > 70 or not transaction['message'].isalnum():
+            return False
+        public_key.verify(bytes.fromhex(transaction['signature']), transaction_bytes(transaction))
+        return True
+    except:
+        return False
 
 
 class Blockchain():
