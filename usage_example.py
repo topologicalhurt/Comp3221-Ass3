@@ -27,15 +27,19 @@ transaction = make_transaction('hello', private_key, 0)
 lock = threading.Lock()
 cond = threading.Condition(lock)
 blocks = []
+
+
 def on_new_block(block):
 	with lock:
 		blocks.append(block)
 		cond.notify()
+
+
 for runner in runners:
 	runner.blockchain.set_on_new_block(on_new_block)
 
 # send the transaction
-assert(clients[0].transaction(transaction) == True)
+assert(clients[0].transaction(transaction))
 
 # wait for the block from all nodes
 with lock:
