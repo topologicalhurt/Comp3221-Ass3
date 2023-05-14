@@ -3,11 +3,17 @@ import json
 import cryptography.hazmat.primitives.asymmetric.ed25519 as ed25519
 
 
+def transaction_full_bytes(transaction_full):
+    return json.dumps(transaction_full, sort_keys=True).encode()
 
 
 def transaction_bytes(transaction: dict):
     return json.dumps({k: transaction.get(k) for k in ['sender', 'message', 'nonce']}, sort_keys=True).encode()
     # TODO: If anything doesnt work it will be this, check this first, sending nonce as well
+
+
+def decode_transaction(data):
+    return json.loads(data.decode())
 
 
 def make_transaction(message: str, private_key: ed25519.Ed25519PrivateKey, nonce: int):
@@ -76,11 +82,15 @@ class Blockchain():
         hex_hash = raw_hash.hexdigest()
         return hex_hash
 
-    def add_transaction(self, transaction):
+    def add_transaction(self, transaction_full):
+        transaction = self.get_transaction_payload(transaction_full)
         if len(self.pool) < self.pool_limit and self.validate_transaction(transaction):
             self.pool.append(transaction)
             return True
         return False
+
+    def get_transaction_payload(self, transaction_full):
+        return transaction_full['payload']
 
     def validate_transaction(self, transaction) -> bool:
         # Checks if there is a transaction in the pool with same nonce and sender
@@ -96,3 +106,23 @@ class Blockchain():
             return None
         response = self.blockchain[index - 1]
         return response
+
+
+# quick little example of how it works locally
+
+b = Blockchain()
+
+# Creating a transaction
+pk = ed25519.Ed25519PrivateKey.from_private_bytes(
+    bytes.fromhex('6dee02b55d8914c145568cb3f3b84586ead2a85910f5b062d7f3f29ddcb4c7aa'))
+transaction = make_transaction("yo whats up", pk, 0)
+transaction_full = make_transaction_full(transaction)
+# encoding (to fake send)
+byte_data = transaction_full_bytes(transaction_full)
+# wow data is in bytes now
+# decoded here
+decoded_data = decode_transaction(byte_data)
+
+b.add_transaction(decoded_data)
+b.new_block()
+print(b.blockchain)
