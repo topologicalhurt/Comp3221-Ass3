@@ -2,9 +2,7 @@ import hashlib
 import json
 import cryptography.hazmat.primitives.asymmetric.ed25519 as ed25519
 
-"""
-kill me now
-"""
+
 
 
 def transaction_bytes(transaction: dict):
@@ -79,15 +77,22 @@ class Blockchain():
         return hex_hash
 
     def add_transaction(self, transaction):
-        if len(self.pool) < self.pool_limit:
+        if len(self.pool) < self.pool_limit and self.validate_transaction(transaction):
             self.pool.append(transaction)
             return True
         return False
 
+    def validate_transaction(self, transaction) -> bool:
+        # Checks if there is a transaction in the pool with same nonce and sender
+        for t in self.pool:
+            if t['nonce'] == transaction['nonce'] and t['sender'] == transaction['sender']:
+                return False
+        return True
+
     def generate_value_response(self, index):
-        # TODO: im pretty sure values is completely wrong, will fix later
+        # TODO: I dont know about value responses yet, this returns a block at 'index'
         if self.last_block()['index'] <= index:
-            print("lazy error check")
+            print("lazy error check (block seg fault)")
             return None
         response = self.blockchain[index - 1]
         return response
