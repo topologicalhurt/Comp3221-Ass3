@@ -1,0 +1,5 @@
+root - ERROR - Traceback (most recent call last):
+root - ERROR -   File "C:\Users\NumNu\OneDrive\Bureau\Soft3221 -ass3\Comp3221-Ass3\usage_example.py", line 81, in <module>
+root - ERROR -     runner.blockchain.set_on_new_block(on_new_block)
+root - ERROR -     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+root - ERROR - AttributeError: 'Blockchain' object has no attribute 'set_on_new_block'
